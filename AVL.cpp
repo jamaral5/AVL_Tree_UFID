@@ -3,36 +3,70 @@
 //
 
 #include "AVL.h"
+#include <vector>
 
-string AVLTree::insert(const string& name, const string& id) {
-
+string AVLTree::insert(const string& name, int id) {
+    if (helperSearch(root, id) == nullptr) {
+        return "unsuccessful";
+    }
+    helperInsert(root, name, id);
+    return "successful";
 };
-string AVLTree::removeId(const string& id) {
-
+string AVLTree::remove(int id) {
+    if (helperSearch(root, id) == nullptr) {
+        return "unsuccessful";
+    }
+    helperRemove(root, id);
+    return "successful";
 };
-string AVLTree::searchId(const string& id) {
-
+string AVLTree::searchId(int id) {
+    if (helperSearch(root, id) == nullptr) {
+        return "unsuccessful";
+    }
+    helperSearch(root, id);
+    return "successful";
 };
+
 string AVLTree::searchName(const string& name) {
-
+    vector<string> vals;
+    string final;
+    helperSearchname(root, name, vals);
+    if (vals.empty()) {
+        return "unsuccesful";
+    }
+    for (int i = 0; i < (int)vals.size(); i++) {
+        final += vals[i];
+        final += "\n";
+    }
+    return "successful";
 };
-vector<string> AVLTree::printInorder() {
 
+void AVLTree::printInorder() {
+    helperInorder(root);
 };
-vector<string> AVLTree::printPreorder() {
 
+void AVLTree::printPreorder() {
+    helperPreorder(root);
 };
-vector<string> AVLTree::printPostorder() {
 
+void AVLTree::printPostorder() {
+    helperPostorder(root);
 };
+
 int AVLTree::printLevelCount() {
-
-};
-string AVLTree::removeInorder(const string& level) {
-
+    return helperMax(root);
 };
 
-int main() {
+string AVLTree::removeInorder(int n) {
+    vector<int> vals;
+    helperInordersort(root, vals);
+    if (n < 0) {
+        return "unsuccessful";
+    }
+    if (n > (int)vals.size()) {
+        return "unsuccessful";
+    }
+    helperRemove(root, vals[n]);
+    return "successful";
+};
 
-
-}
