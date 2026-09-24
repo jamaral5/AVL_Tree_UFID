@@ -6,33 +6,66 @@
 #include <vector>
 
 //HELP FUNCTIONS
-
-void AVLTree::helperPreorder(Node* helpRoot) {
-    if (helpRoot == nullptr) {
-        return;
+int AVLTree::getHeight(Node* n) {
+    if (n == nullptr) {
+        return 0;
     }
-    cout << helpRoot->val << " ";
-    helperPreorder(helpRoot->left);
-    helperPreorder(helpRoot->right);
+    return n->height;
 };
 
-void AVLTree::helperPostorder(Node* helpRoot) {
+int AVLTree::getBF(Node* n) {
+    if (n == nullptr) {
+        return 0;
+    }
+    return getHeight(n->left) - getHeight(n->right);
+};
+
+AVLTree::Node* AVLTree::rotateLeft(Node* x) {
+    Node* y = x->right;
+    Node* temp = y->left;
+    y->left = x;
+    x->right = temp;
+    x->height = 1 + max(getHeight(x->left), getHeight(x->right));
+    y->height = 1 + max(getHeight(y->left), getHeight(y->right));
+    return y;
+};
+
+AVLTree::Node* AVLTree::rotateRight(Node* y) {
+    Node* x = y->left;
+    Node* temp = x->right;
+    x->right = y;
+    y->left = temp;
+    y->height = 1 + max(getHeight(y->left), getHeight(y->right));
+    x->height = 1 + max(getHeight(x->left), getHeight(x->right));
+    return x;
+};
+
+void AVLTree::helperPreorder(Node* helpRoot, vector<string>& final) {
     if (helpRoot == nullptr) {
         return;
     }
-    helperPostorder(helpRoot->left);
-    helperPostorder(helpRoot->right);
-    cout << helpRoot->val << " ";
+    final.push_back(helpRoot->name);
+    helperPreorder(helpRoot->left, final);
+    helperPreorder(helpRoot->right, final);
+};
+
+void AVLTree::helperPostorder(Node* helpRoot, vector<string>& final) {
+    if (helpRoot == nullptr) {
+        return;
+    }
+    helperPostorder(helpRoot->left, final);
+    helperPostorder(helpRoot->right, final);
+    final.push_back(helpRoot->name);
 };
 
 
-void AVLTree::helperInorder(Node* helpRoot) {
+void AVLTree::helperInorder(Node* helpRoot, vector<string>& final) {
     if (helpRoot == nullptr) {
         return;
     }
-    helperInorder(helpRoot->left);
-    cout << helpRoot->val << " ";
-    helperInorder(helpRoot->right);
+    helperInorder(helpRoot->left, final);
+    final.push_back(helpRoot->name);
+    helperInorder(helpRoot->right, final);
 };
 
 void AVLTree::helperInordersort(Node* helpRoot, vector<int>& vals) {
@@ -47,12 +80,28 @@ void AVLTree::helperInordersort(Node* helpRoot, vector<int>& vals) {
 
 AVLTree::Node* AVLTree::helperInsert(Node* helpRoot, const string& name, int id) {
     if (helpRoot == nullptr) {
-        return new Node{id, nullptr, nullptr, 0, name};
+        return new Node{id, nullptr, nullptr, 1, name};
     }
     if (id < helpRoot->val) {
         helpRoot->left = helperInsert(helpRoot->left, name, id);
-    }else {
+    }
+    if (id > helpRoot-> val){
         helpRoot->right = helperInsert(helpRoot->right, name, id);
+    }
+    helpRoot->height = 1 + max(getHeight(helpRoot->left), getHeight(helpRoot->right));
+    if (getBF(helpRoot) > 1 && id < helpRoot->left->val) {
+        return rotateRight(helpRoot);
+    }
+    if (getBF(helpRoot) < -1 && id > helpRoot->right->val) {
+        return rotateLeft(helpRoot);
+    }
+    if (getBF(helpRoot) > 1 && id > helpRoot->left->val) {
+        helpRoot->left = rotateLeft(helpRoot->left);
+        return rotateRight(helpRoot);
+    }
+    if (getBF(helpRoot) < -1 && id < helpRoot->right->val) {
+        helpRoot->right = rotateRight(helpRoot->right);
+        return rotateLeft(helpRoot);
     }
     return helpRoot;
 };
@@ -85,7 +134,7 @@ int AVLTree::helperMax(Node* helpRoot) {
     if (helpRoot == nullptr) {
         return 0;
     }
-    return max(helperMax(helpRoot->left), helperMax(helpRoot->right));
+    return 1 + max(helperMax(helpRoot->left), helperMax(helpRoot->right));
 };
 
 AVLTree::Node* AVLTree::helperRemove(Node* helpRoot, int id) {
@@ -106,7 +155,7 @@ AVLTree::Node* AVLTree::helperRemove(Node* helpRoot, int id) {
             return nullptr;
         }else if(helpRoot->left == nullptr) {
             Node* temp = helpRoot->right;
-            delete helpRoot->right;
+            delete helpRoot;
             return temp;
         }else if(helpRoot->right == nullptr) {
            Node* temp = helpRoot->left;
@@ -114,63 +163,91 @@ AVLTree::Node* AVLTree::helperRemove(Node* helpRoot, int id) {
             return temp;
         }
     }
-    while (helpRoot->right->left != nullptr) {
-        helpRoot->right = helpRoot->right->left;
+    Node* after = helpRoot->right;
+    while (after->left != nullptr) {
+        after = after->left;
     }
-    helpRoot->val = helpRoot->right->val;
-    helpRoot->name = helpRoot->right->name;
-    helpRoot->right = helperRemove(helpRoot->right, helpRoot->right->val);
+    helpRoot->val = after->val;
+    helpRoot->name = after->name;
+    helpRoot->right = helperRemove(helpRoot->right, after->val);
     return helpRoot;
 };
 
 //BEGIN REAL FUNCTIONS
 
 string AVLTree::insert(const string& name, int id) {
-    if (helperSearch(root, id) == nullptr) {
+    if (name.empty()) {
         return "unsuccessful";
     }
-    helperInsert(root, name, id);
+    for (char c : name) {
+        bool lowercase = (c>='a' && c<='z');
+        bool uppercase = (c>='A' && c<='Z');
+        bool space = (c==' ');
+        if (!lowercase && !uppercase && !space) {
+            return "unsuccessful";
+        }
+    }
+    if (id < 10000000 || id > 99999999) {
+        return "unsuccessful";
+    }
+    if (helperSearch(root, id) != nullptr) {
+        return "unsuccessful";
+
+    }
+    root = helperInsert(root, name, id);
     return "successful";
 };
+
 string AVLTree::remove(int id) {
     if (helperSearch(root, id) == nullptr) {
         return "unsuccessful";
     }
-    helperRemove(root, id);
+    root = helperRemove(root, id);
     return "successful";
 };
 string AVLTree::searchId(int id) {
     if (helperSearch(root, id) == nullptr) {
         return "unsuccessful";
     }
-    helperSearch(root, id);
-    return "successful";
+    return helperSearch(root, id)->name;
 };
 
 string AVLTree::searchName(const string& name) {
     vector<string> vals;
-    string final;
     helperSearchname(root, name, vals);
     if (vals.empty()) {
-        return "unsuccesful";
+        return "unsuccessful";
     }
+    string final;
     for (int i = 0; i < (int)vals.size(); i++) {
         final += vals[i];
         final += "\n";
     }
-    return "successful";
+    return final;
 };
 
-void AVLTree::printInorder() {
-    helperInorder(root);
+vector<string> AVLTree::printInorder() {
+    vector<string> final;
+    helperInorder(root, final);
+    return final;
 };
 
-void AVLTree::printPreorder() {
-    helperPreorder(root);
+vector<string> AVLTree::printPreorder() {
+    vector<string> final;
+    helperPreorder(root, final);
+    return final;
 };
 
-void AVLTree::printPostorder() {
-    helperPostorder(root);
+vector<string> AVLTree::printPostorder() {
+    vector<string> final;
+    helperPostorder(root, final);
+    return final;
+};
+
+vector<int> AVLTree::inorderId() {
+    vector<int> vals;
+    helperInordersort(root, vals);
+    return vals;
 };
 
 int AVLTree::printLevelCount() {
@@ -183,10 +260,11 @@ string AVLTree::removeInorder(int n) {
     if (n < 0) {
         return "unsuccessful";
     }
-    if (n > (int)vals.size()) {
+    if (n >= (int)vals.size()) {
         return "unsuccessful";
     }
-    helperRemove(root, vals[n]);
+    root = helperRemove(root, vals[n]);
     return "successful";
 };
+
 
